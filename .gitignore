@@ -1,0 +1,24 @@
+# Ignore the third_party directory created by build scripts
+/third_party/
+/third_party_build/
+
+# macOS
+.DS_Store
+
+# Xcode
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+*.xcuserstate
+
+# Swift Package Manager
+/.build/
+/.swiftpm/
+
+# Editor temp files
+*~
+*.swp

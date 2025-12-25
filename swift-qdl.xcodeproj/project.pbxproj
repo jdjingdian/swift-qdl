@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		394582CE2EFB994C0001C936 /* libusb-1.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 394582CC2EFB994C0001C936 /* libusb-1.0.0.dylib */; };
-		394582CF2EFB994C0001C936 /* libxml2.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 394582CD2EFB994C0001C936 /* libxml2.16.dylib */; };
-		394582D02EFB99560001C936 /* libusb-1.0.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 394582CC2EFB994C0001C936 /* libusb-1.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		394582D12EFB99560001C936 /* libxml2.16.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 394582CD2EFB994C0001C936 /* libxml2.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		398DB7932EFB8F7900704584 /* libqdl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 398DB7922EFB8F7900704584 /* libqdl.dylib */; };
-		398DB7972EFB94D000704584 /* libqdl.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 398DB7922EFB8F7900704584 /* libqdl.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		394583BD2EFCE96C0001C936 /* libusb-1.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 394583BB2EFCE96C0001C936 /* libusb-1.0.0.dylib */; };
+		394583BE2EFCE96C0001C936 /* libxml2.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 394583BC2EFCE96C0001C936 /* libxml2.16.dylib */; };
+		394583BF2EFCE9780001C936 /* libusb-1.0.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 394583BB2EFCE96C0001C936 /* libusb-1.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		394583C02EFCE9780001C936 /* libxml2.16.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 394583BC2EFCE96C0001C936 /* libxml2.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		394583C42EFCEC1E0001C936 /* libqdl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 394583C32EFCEC1E0001C936 /* libqdl.dylib */; };
+		394583C62EFCEC3D0001C936 /* libqdl.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 394583C32EFCEC1E0001C936 /* libqdl.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -22,26 +22,25 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				394582D02EFB99560001C936 /* libusb-1.0.0.dylib in CopyFiles */,
-				394582D12EFB99560001C936 /* libxml2.16.dylib in CopyFiles */,
-				398DB7972EFB94D000704584 /* libqdl.dylib in CopyFiles */,
+				394583C62EFCEC3D0001C936 /* libqdl.dylib in CopyFiles */,
+				394583BF2EFCE9780001C936 /* libusb-1.0.0.dylib in CopyFiles */,
+				394583C02EFCE9780001C936 /* libxml2.16.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		394582CC2EFB994C0001C936 /* libusb-1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libusb-1.0.0.dylib"; sourceTree = "<group>"; };
-		394582CD2EFB994C0001C936 /* libxml2.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libxml2.16.dylib; sourceTree = "<group>"; };
-		398DB7842EFB8E7000704584 /* qdl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = qdl.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		398DB7922EFB8F7900704584 /* libqdl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libqdl.dylib; sourceTree = "<group>"; };
-		398DB7952EFB905A00704584 /* qdl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = qdl.h; sourceTree = "<group>"; };
+		394583BB2EFCE96C0001C936 /* libusb-1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libusb-1.0.0.dylib"; path = "third_party/lib/libusb-1.0.0.dylib"; sourceTree = "<group>"; };
+		394583BC2EFCE96C0001C936 /* libxml2.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.16.dylib; path = third_party/lib/libxml2.16.dylib; sourceTree = "<group>"; };
+		394583C32EFCEC1E0001C936 /* libqdl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libqdl.dylib; path = third_party/lib/libqdl.dylib; sourceTree = "<group>"; };
+		398DB7842EFB8E7000704584 /* swift-qdl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "swift-qdl.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		398DB7862EFB8E7000704584 /* qdl */ = {
+		398DB7862EFB8E7000704584 /* swift-qdl */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = qdl;
+			path = "swift-qdl";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -51,9 +50,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				394582CE2EFB994C0001C936 /* libusb-1.0.0.dylib in Frameworks */,
-				394582CF2EFB994C0001C936 /* libxml2.16.dylib in Frameworks */,
-				398DB7932EFB8F7900704584 /* libqdl.dylib in Frameworks */,
+				394583BD2EFCE96C0001C936 /* libusb-1.0.0.dylib in Frameworks */,
+				394583BE2EFCE96C0001C936 /* libxml2.16.dylib in Frameworks */,
+				394583C42EFCEC1E0001C936 /* libqdl.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,11 +62,10 @@
 		398DB77B2EFB8E7000704584 = {
 			isa = PBXGroup;
 			children = (
-				394582CC2EFB994C0001C936 /* libusb-1.0.0.dylib */,
-				394582CD2EFB994C0001C936 /* libxml2.16.dylib */,
-				398DB7952EFB905A00704584 /* qdl.h */,
-				398DB7922EFB8F7900704584 /* libqdl.dylib */,
-				398DB7862EFB8E7000704584 /* qdl */,
+				394583C32EFCEC1E0001C936 /* libqdl.dylib */,
+				394583BB2EFCE96C0001C936 /* libusb-1.0.0.dylib */,
+				394583BC2EFCE96C0001C936 /* libxml2.16.dylib */,
+				398DB7862EFB8E7000704584 /* swift-qdl */,
 				398DB7852EFB8E7000704584 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -75,7 +73,7 @@
 		398DB7852EFB8E7000704584 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				398DB7842EFB8E7000704584 /* qdl.app */,
+				398DB7842EFB8E7000704584 /* swift-qdl.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,9 +81,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		398DB7832EFB8E7000704584 /* qdl */ = {
+		398DB7832EFB8E7000704584 /* swift-qdl */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 398DB78F2EFB8E7100704584 /* Build configuration list for PBXNativeTarget "qdl" */;
+			buildConfigurationList = 398DB78F2EFB8E7100704584 /* Build configuration list for PBXNativeTarget "swift-qdl" */;
 			buildPhases = (
 				398DB7802EFB8E7000704584 /* Sources */,
 				398DB7812EFB8E7000704584 /* Frameworks */,
@@ -97,13 +95,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				398DB7862EFB8E7000704584 /* qdl */,
+				398DB7862EFB8E7000704584 /* swift-qdl */,
 			);
-			name = qdl;
+			name = "swift-qdl";
 			packageProductDependencies = (
 			);
 			productName = qdl;
-			productReference = 398DB7842EFB8E7000704584 /* qdl.app */;
+			productReference = 398DB7842EFB8E7000704584 /* swift-qdl.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -121,7 +119,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 398DB77F2EFB8E7000704584 /* Build configuration list for PBXProject "qdl" */;
+			buildConfigurationList = 398DB77F2EFB8E7000704584 /* Build configuration list for PBXProject "swift-qdl" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -135,7 +133,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				398DB7832EFB8E7000704584 /* qdl */,
+				398DB7832EFB8E7000704584 /* swift-qdl */,
 			);
 		};
 /* End PBXProject section */
@@ -289,7 +287,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BR63YT2EJJ;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -303,6 +301,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
+					"$(PROJECT_DIR)/third_party/lib",
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
@@ -311,14 +310,14 @@
 					"-Xlinker",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = cn.magicdian.qdl;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.magicdian.swiftqdl;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "qdl/qdl-bridge.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "swift-qdl/qdl-bridge.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -332,7 +331,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BR63YT2EJJ;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -346,6 +345,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
+					"$(PROJECT_DIR)/third_party/lib",
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
@@ -354,14 +354,14 @@
 					"-Xlinker",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = cn.magicdian.qdl;
+				PRODUCT_BUNDLE_IDENTIFIER = cn.magicdian.swiftqdl;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "qdl/qdl-bridge.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "swift-qdl/qdl-bridge.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -370,7 +370,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		398DB77F2EFB8E7000704584 /* Build configuration list for PBXProject "qdl" */ = {
+		398DB77F2EFB8E7000704584 /* Build configuration list for PBXProject "swift-qdl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				398DB78D2EFB8E7100704584 /* Debug */,
@@ -379,7 +379,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		398DB78F2EFB8E7100704584 /* Build configuration list for PBXNativeTarget "qdl" */ = {
+		398DB78F2EFB8E7100704584 /* Build configuration list for PBXNativeTarget "swift-qdl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				398DB7902EFB8E7100704584 /* Debug */,
