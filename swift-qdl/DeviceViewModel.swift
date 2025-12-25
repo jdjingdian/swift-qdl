@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Combine
 
 // Swift-side C callback signature
@@ -21,6 +22,8 @@ final class DeviceViewModel: ObservableObject {
     @Published var rawprogramPaths: [String] = []
     @Published var patchPaths: [String] = []
     @Published var provisionPaths: [String] = []
+    // remember last selected firmware directory to reuse between modes
+    @Published var firmwareDirectory: String? = nil
 
     // runtime state
     @Published var isRunning: Bool = false
@@ -114,18 +117,91 @@ final class DeviceViewModel: ObservableObject {
                 }
             }
 
-            ret = cPtrs.withUnsafeMutableBufferPointer { buf in
-                let count = Int32(buf.count)
-                // call qdl_run; convert cSerial to UnsafePointer if present
-                return qdl_run(self.mode == .download ? QDL_MODE_FLASH : QDL_MODE_PROVISION,
-                               cSerial != nil ? UnsafePointer(cSerial) : nil,
-                               storageType,
-                               cProg,
-                               buf.baseAddress,
-                               count,
-                               false,
-                               includeDirC,
-                               0)
+            // Prepare to capture stdout/stderr from the native qdl_run by redirecting
+            // the process' stdout/stderr to a pipe that we read from.
+            var pipefd: [Int32] = [0, 0]
+            if pipe(&pipefd) == 0 {
+                // save original fds
+                let stdoutBak = dup(STDOUT_FILENO)
+                let stderrBak = dup(STDERR_FILENO)
+
+                // redirect stdout and stderr to pipe write end
+                dup2(pipefd[1], STDOUT_FILENO)
+                dup2(pipefd[1], STDERR_FILENO)
+
+                // close write end in this thread after dup2
+                close(pipefd[1])
+
+                // start a reader to read from pipefd[0]
+                let readFD = pipefd[0]
+                let readerQueue = DispatchQueue(label: "qdl.stdout.reader")
+                var readerActive = true
+                readerQueue.async {
+                    let bufferSize = 4096
+                    let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: bufferSize)
+                    defer { buffer.deallocate() }
+                    while readerActive {
+                        let n = read(readFD, buffer, bufferSize)
+                        if n > 0 {
+                            let data = Data(bytes: buffer, count: n)
+                            if let s = String(data: data, encoding: .utf8) {
+                                DispatchQueue.main.async {
+                                    self.appendTerminalOutput(s)
+                                }
+                            } else {
+                                // try ascii fallback
+                                if let s = String(data: data, encoding: .ascii) {
+                                    DispatchQueue.main.async { self.appendTerminalOutput(s) }
+                                }
+                            }
+                        } else {
+                            // EOF or error
+                            break
+                        }
+                    }
+                    close(readFD)
+                }
+
+                // call qdl_run while stdout/stderr are redirected
+                ret = cPtrs.withUnsafeMutableBufferPointer { buf in
+                    let count = Int32(buf.count)
+                    return qdl_run(self.mode == .download ? QDL_MODE_FLASH : QDL_MODE_FLASH,
+                                   cSerial != nil ? UnsafePointer(cSerial) : nil,
+                                   storageType,
+                                   cProg,
+                                   buf.baseAddress,
+                                   count,
+                                   false,
+                                   includeDirC,
+                                   0)
+                }
+
+                // restore stdout/stderr
+                fflush(stdout)
+                fflush(stderr)
+                dup2(stdoutBak, STDOUT_FILENO)
+                dup2(stderrBak, STDERR_FILENO)
+                close(stdoutBak)
+                close(stderrBak)
+
+                // signal reader to stop and give it a moment to drain
+                readerActive = false
+                // small sleep to allow reader to finish reading remaining bytes
+                usleep(10000)
+            } else {
+                // failed to create pipe; fallback to direct call
+                ret = cPtrs.withUnsafeMutableBufferPointer { buf in
+                    let count = Int32(buf.count)
+                    return qdl_run(self.mode == .download ? QDL_MODE_FLASH : QDL_MODE_FLASH,
+                                   cSerial != nil ? UnsafePointer(cSerial) : nil,
+                                   storageType,
+                                   cProg,
+                                   buf.baseAddress,
+                                   count,
+                                   false,
+                                   includeDirC,
+                                   0)
+                }
             }
         }
     }
@@ -135,6 +211,12 @@ final class DeviceViewModel: ObservableObject {
     @Published var progressValue: UInt32 = 0
     @Published var progressTotal: UInt32 = 0
     @Published var progressPercent: Double = 0.0
+
+    // Terminal / logging output captured from the native qdl run
+    @Published var terminalLog: String = ""
+    @Published var terminalLines: [String] = []
+    // internal buffer for partial lines when reading stream
+    private var terminalBuffer: String = ""
 
     // keep a storage for the C function pointer so it won't be deallocated
     private var cbPointerStorage: qdl_progress_cb_t? = nil
@@ -165,6 +247,37 @@ final class DeviceViewModel: ObservableObject {
         cbPointerStorage = fn
         let userdata = Unmanaged.passUnretained(self).toOpaque()
         qdl_set_progress_callback(fn, userdata)
+    }
+
+    func clearTerminal() {
+        DispatchQueue.main.async {
+            self.terminalLog = ""
+            self.terminalLines = []
+            self.terminalBuffer = ""
+        }
+    }
+
+    private func appendTerminalOutput(_ s: String) {
+        // append to buffer and split into lines
+        terminalBuffer += s
+        // split by newlines preserving partial last line
+        var lines = terminalBuffer.components(separatedBy: CharacterSet.newlines)
+        // if last element is not an empty string, it's a partial line
+        let partial = lines.popLast() ?? ""
+
+        if !lines.isEmpty {
+            for l in lines {
+                terminalLines.append(l)
+            }
+            // keep full text too
+            terminalLog = (terminalLog.isEmpty ? "" : terminalLog + "") + lines.joined(separator: "\n") + "\n"
+        }
+
+        terminalBuffer = partial
+        // keep terminalLog updated with partial tail as well (no newline)
+        if !terminalBuffer.isEmpty {
+            terminalLog = terminalLog + terminalBuffer
+        }
     }
 
     func unregisterProgressCallback() {
