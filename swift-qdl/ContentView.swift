@@ -17,23 +17,23 @@ struct ContentView: View {
             // Sidebar: device list with refresh
             VStack {
                 HStack {
-                    Text("Devices")
+                    Text("devices_title")
                         .font(.headline)
                     Spacer()
                     Button(action: { vm.queryDevices() }) {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .help("刷新设备列表")
+                    .help(Text("devices_refresh"))
                 }
                 .padding([.horizontal, .top])
 
                 if vm.isQuerying {
-                    ProgressView("查询设备...")
+                    ProgressView("devices_querying")
                         .padding()
                 } else if vm.devices.isEmpty {
-                    VStack { Spacer(); Text("无设备").foregroundColor(.secondary); Spacer() }
+                    VStack { Spacer(); Text("devices_none").foregroundColor(.secondary); Spacer() }
                 } else {
-                    List(selection: Binding(get: { vm.selected }, set: { vm.selected = $0 })) {
+                    List {
                         ForEach(vm.devices) { d in
                             HStack {
                                 VStack(alignment: .leading) {
@@ -46,7 +46,10 @@ struct ContentView: View {
                                 }
                             }
                             .padding(.vertical, 6)
-                            .tag(d)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                vm.selected = d
+                            }
                         }
                     }
                     // removed automatic firmware selection on device change; user picks directory manually
@@ -54,7 +57,7 @@ struct ContentView: View {
                 }
 
                 Spacer()
-                Text("QDL version: \(version)")
+                Text(String(format: "%@ %@", NSLocalizedString("qdl_version", comment: "QDL version label"), version))
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .padding()
@@ -75,8 +78,8 @@ struct ContentView: View {
                 } else {
                     VStack(alignment: .center) {
                         Spacer()
-                        Text("未选择设备").font(.title3).foregroundColor(.secondary)
-                        Button("刷新设备列表") { vm.queryDevices() }
+                        Text("no_device_selected").font(.title3).foregroundColor(.secondary)
+                        Button("refresh_devices") { vm.queryDevices() }
                             .buttonStyle(.bordered)
                         Spacer()
                     }

@@ -34,9 +34,9 @@ func openFiles(allowed: [String], filterPattern: String = "*", startDir: String?
         dirPanel.canChooseDirectories = true
         dirPanel.canChooseFiles = false
         dirPanel.allowsMultipleSelection = false
-        dirPanel.title = "选择固件目录"
-        dirPanel.prompt = "选择"
-        dirPanel.message = "请选择固件所在目录"
+    dirPanel.title = NSLocalizedString("firmware_dir_panel_title", comment: "firmware directory panel title")
+    dirPanel.prompt = NSLocalizedString("firmware_dir_panel_prompt", comment: "firmware directory panel prompt")
+    dirPanel.message = NSLocalizedString("firmware_dir_panel_message", comment: "firmware directory panel message")
         dirPanel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSHomeDirectory())
 
         var dirResp: NSApplication.ModalResponse = .cancel
@@ -126,8 +126,8 @@ func selectFirmwareDirectory(viewModel: DeviceViewModel) {
     panel.canChooseDirectories = true
     panel.canChooseFiles = false
     panel.allowsMultipleSelection = false
-    panel.title = "选择 固件 主目录"
-    panel.prompt = "选择目录"
+    panel.title = NSLocalizedString("firmware_root_panel_title", comment: "firmware root panel title")
+    panel.prompt = NSLocalizedString("firmware_root_panel_prompt", comment: "firmware root panel prompt")
     if let last = viewModel.firmwareDirectory, FileManager.default.fileExists(atPath: last) {
         panel.directoryURL = URL(fileURLWithPath: last)
     } else {
@@ -152,9 +152,9 @@ func runFirmwareSelection(viewModel: DeviceViewModel) {
     dirPanel.canChooseDirectories = true
     dirPanel.canChooseFiles = false
     dirPanel.allowsMultipleSelection = false
-    dirPanel.title = "选择固件目录"
-    dirPanel.prompt = "选择"
-    dirPanel.message = "请选择固件所在目录，会只显示匹配的 elf 和 xml 文件"
+    dirPanel.title = NSLocalizedString("firmware_dir_panel_title", comment: "firmware directory panel title")
+    dirPanel.prompt = NSLocalizedString("firmware_dir_panel_prompt", comment: "firmware directory panel prompt")
+    dirPanel.message = NSLocalizedString("firmware_dir_panel_message", comment: "firmware directory panel message")
     if let last = viewModel.firmwareDirectory, FileManager.default.fileExists(atPath: last) {
         dirPanel.directoryURL = URL(fileURLWithPath: last)
     } else {

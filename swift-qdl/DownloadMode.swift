@@ -6,13 +6,13 @@ struct DownloadModeView: View {
     var body: some View {
         GroupBox(label: Label("操作", systemImage: "gearshape")) {
             VStack(alignment: .leading, spacing: 12) {
-                Picker("Mode", selection: Binding(get: { viewModel.mode == .download ? 0 : 1 }, set: { viewModel.mode = $0 == 0 ? .download : .provision })) {
-                    Text("Download").tag(0)
-                    Text("Provision").tag(1)
+                Picker("mode_label", selection: Binding(get: { viewModel.mode == .download ? 0 : 1 }, set: { viewModel.mode = $0 == 0 ? .download : .provision })) {
+                    Text("mode_download").tag(0)
+                    Text("mode_provision").tag(1)
                 }
                 .pickerStyle(SegmentedPickerStyle())
 
-                Picker("Storage Type", selection: $viewModel.storageType) {
+                Picker("storage_type_label", selection: $viewModel.storageType) {
                     ForEach(DeviceViewModel.StorageType.allCases) { t in
                         Text(t.displayName).tag(t)
                     }
@@ -21,25 +21,25 @@ struct DownloadModeView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Button("选择 固件主目录") { selectFirmwareDirectory(viewModel: viewModel) }
+                        Button("select_firmware_root") { selectFirmwareDirectory(viewModel: viewModel) }
                         .buttonStyle(.bordered)
                         Spacer()
-                        Text(viewModel.firmwareDirectory ?? "未选择主目录").font(.caption).foregroundColor(.secondary)
+                        Text(viewModel.firmwareDirectory ?? NSLocalizedString("firmware_root_unselected", comment: "no firmware root selected")).font(.caption).foregroundColor(.secondary)
                     }
 
                     HStack {
-                        Button("选择 Programmer (.elf)") {
+                        Button("select_programmer") {
                             if let path = openSingleFiltered(allowed: ["elf"], filterPattern: "*firehose*.elf", startDir: viewModel.firmwareDirectory) {
                                 viewModel.programmerPath = path
                             }
                         }
                         Spacer()
-                        Text(viewModel.programmerPath ?? "未选择").font(.caption).foregroundColor(.secondary)
+                        Text(viewModel.programmerPath ?? NSLocalizedString("programmer_unselected", comment: "programmer not selected")).font(.caption).foregroundColor(.secondary)
                     }
 
                     if viewModel.mode == .download {
                         HStack {
-                            Button("选择 rawprogram(s).xml") {
+                            Button("select_rawprogram") {
                                 let paths = openFiles(allowed: ["xml"], filterPattern: "*rawprogram*", startDir: viewModel.firmwareDirectory)
                                 viewModel.rawprogramPaths = paths
                             }
@@ -48,7 +48,7 @@ struct DownloadModeView: View {
                         }
 
                         HStack {
-                            Button("选择 patch(es).xml") {
+                            Button("select_patch") {
                                 let paths = openFiles(allowed: ["xml"], filterPattern: "patch*", startDir: viewModel.firmwareDirectory)
                                 viewModel.patchPaths = paths
                             }
@@ -57,7 +57,7 @@ struct DownloadModeView: View {
                         }
                     } else {
                         HStack {
-                            Button("选择 provision(s).xml") {
+                            Button("select_provision") {
                                 let paths = openFiles(allowed: ["xml"], filterPattern: "provision*", startDir: viewModel.firmwareDirectory)
                                 viewModel.provisionPaths = paths
                             }
@@ -68,7 +68,7 @@ struct DownloadModeView: View {
                 }
 
                 HStack {
-                    Button(action: { viewModel.start() }) { Label("Start", systemImage: "play.fill") }
+                    Button(action: { viewModel.start() }) { Label("start_button", systemImage: "play.fill") }
                         .keyboardShortcut(.defaultAction)
                         .disabled(!viewModel.canStart)
                         .buttonStyle(.borderedProminent)
@@ -86,17 +86,17 @@ struct DownloadModeView: View {
                 if let res = viewModel.runResult {
                     HStack {
                         Image(systemName: res == 0 ? "checkmark.seal.fill" : "xmark.seal.fill").foregroundColor(res == 0 ? .green : .red)
-                        Text("Run result: \(res)")
+                        Text("\(NSLocalizedString("run_result", comment: "run result")): \(res)")
                     }
                 }
 
                 // Terminal log area
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Terminal").font(.headline)
+                        Text("terminal_title").font(.headline)
                         Spacer()
-                        Button("Clear") { viewModel.clearTerminal() }.buttonStyle(.bordered)
-                        Button("Copy") {
+                        Button("terminal_clear") { viewModel.clearTerminal() }.buttonStyle(.bordered)
+                        Button("terminal_copy") {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(viewModel.terminalLog, forType: .string)
                         }.buttonStyle(.bordered)
