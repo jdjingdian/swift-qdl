@@ -39,4 +39,3 @@ chmod +x /scripts/build_submodules.sh && ./scripts/build_submodules.sh
 - [qdl (linux-msm/qdl)](https://github.com/linux-msm/qdl)
 - [libusb (libusb/libusb)](https://github.com/libusb/libusb)
 - [libxml2 (GNOME/libxml2)](https://github.com/GNOME/libxml2)
-
