@@ -1,0 +1,104 @@
+# This workflow will build a Swift project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
+
+name: Swift
+
+name: Build macOS App and DMG (unsigned)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-15
+
+    env:
+      # 根据实际情况修改你的 scheme 和项目路径
+      XCODE_PROJECT: swift-qdl.xcodeproj
+      SCHEME: swift-qdl
+      CONFIGURATION: Release
+      # Xcode 构建输出目录（后面会用到）
+      BUILD_DIR: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive  # 可以让 GitHub 直接拉子模块，或下面手动拉
+
+      # 如果你更喜欢本地脚本流程，也可以保留这个步骤：
+      # - name: Init submodules manually
+      #   run: git submodule update --init --recursive
+
+      - name: Install build dependencies (Homebrew)
+        run: |
+          brew update
+          brew install cmake autoconf automake libtool pkg-config
+
+      - name: Build third_party libraries
+        run: |
+          chmod +x scripts/build_submodules.sh
+          ./scripts/build_submodules.sh
+
+      - name: Select Xcode version (optional)
+        # 如需锁特定 Xcode 版本，可使用 xcode-select 或 xcodebuild -version 检查
+        run: |
+          xcodebuild -version
+
+      - name: Build .app with xcodebuild
+        run: |
+          mkdir -p "$BUILD_DIR"
+          # 使用 xcodebuild 构建 Release 配置
+          xcodebuild \
+            -project "$XCODE_PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIGURATION" \
+            -derivedDataPath "$BUILD_DIR/DerivedData" \
+            -destination "platform=macOS" \
+            build
+
+      - name: Locate built .app
+        id: locate_app
+        run: |
+          # 通常 Xcode 的 .app 会在 DerivedData/Build/Products/Release 下
+          APP_PATH=$(find "$BUILD_DIR/DerivedData/Build/Products" -maxdepth 3 -name "swift-qdl.app" -type d | head -n 1)
+          echo "APP_PATH=$APP_PATH"
+          if [ -z "$APP_PATH" ]; then
+            echo "Could not find swift-qdl.app"
+            exit 1
+          fi
+          echo "app-path=$APP_PATH" >> $GITHUB_OUTPUT
+
+      - name: Create unsigned DMG
+        run: |
+          APP_PATH="${{ steps.locate_app.outputs.app-path }}"
+          echo "Using app: $APP_PATH"
+
+          # 准备打包目录
+          mkdir -p "dmg_tmp"
+          cp -R "$APP_PATH" "dmg_tmp/"
+
+          # 生成未签名 DMG
+          hdiutil create \
+            -volname "swift-qdl" \
+            -srcfolder "dmg_tmp" \
+            -ov \
+            -format UDBZ \
+            "swift-qdl-unsigned.dmg"
+
+      - name: Upload .app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-qdl-app-unsigned
+          path: |
+            ${{ steps.locate_app.outputs.app-path }}
+
+      - name: Upload .dmg artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swift-qdl-dmg-unsigned
+          path: swift-qdl-unsigned.dmg
