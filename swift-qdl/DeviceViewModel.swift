@@ -17,6 +17,44 @@ final class DeviceViewModel: ObservableObject {
 
     @Published var mode: Mode = .download
 
+    enum StorageType: String, CaseIterable, Identifiable {
+        case emmc
+        case nand
+        case ufs
+        case nvme
+        case spinor
+
+        var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .emmc: return "eMMC"
+            case .nand: return "NAND"
+            case .ufs: return "UFS"
+            case .nvme: return "NVMe"
+            case .spinor: return "SPI-NOR"
+            }
+        }
+
+        var cValue: qdl_storage_type_t {
+            switch self {
+            case .emmc:
+                return QDL_STORAGE_EMMC
+            case .nand:
+                return QDL_STORAGE_NAND
+            case .ufs:
+                return QDL_STORAGE_UFS
+            case .nvme:
+                return QDL_STORAGE_NVME
+            case .spinor:
+                return QDL_STORAGE_SPINOR
+            }
+        }
+    }
+
+    // 默认使用 UFS
+    @Published var storageType: StorageType = .ufs
+
     // file selections
     @Published var programmerPath: String? = nil
     @Published var rawprogramPaths: [String] = []
@@ -48,8 +86,7 @@ final class DeviceViewModel: ObservableObject {
 
         DispatchQueue.global().async {
             // prepare arguments
-            // todo: dynamic storage type
-            let storageType = qdl_storage_type_t(QDL_STORAGE_UFS.rawValue)
+            let storageType = self.storageType.cValue
             let prog = self.programmerPath
             var xmlPaths: [String] = []
             switch self.mode {

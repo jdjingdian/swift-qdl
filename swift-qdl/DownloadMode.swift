@@ -12,6 +12,13 @@ struct DownloadModeView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
 
+                Picker("Storage Type", selection: $viewModel.storageType) {
+                    ForEach(DeviceViewModel.StorageType.allCases) { t in
+                        Text(t.displayName).tag(t)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Button("选择 固件主目录") { selectFirmwareDirectory(viewModel: viewModel) }
