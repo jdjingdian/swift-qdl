@@ -1,0 +1,53 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby (for fastlane, optional)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x ./scripts/bump-version.sh || true
+
+      - name: Bump version (update Info.plist)
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          echo "Tag: $TAG_NAME"
+          # pass tag name without leading v
+          ./scripts/bump-version.sh ${TAG_NAME#v} --commit || true
+
+      - name: Build archive
+        run: |
+          echo "Skipping build step in this template. Replace with xcodebuild or fastlane as needed."
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release assets (optional)
+        uses: actions/upload-release-asset@v1
+        if: false
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./path/to/your/artifact.zip
+          asset_name: artifact.zip
+          asset_content_type: application/zip
