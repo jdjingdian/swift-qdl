@@ -1,0 +1,181 @@
+From 2dcf972e521d11d5080362c60ef7c78ef900c36c Mon Sep 17 00:00:00 2001
+From: jingd2 <jingd2@xiaopeng.com>
+Date: Sat, 27 Dec 2025 15:52:27 +0800
+Subject: [PATCH] Optimize XML parsing to avoid incorrect syntax in the
+ generated XML file that could prevent firmware flashing.
+
+---
+ patch.c   |  2 +-
+ program.c |  2 +-
+ qdl.c     |  2 +-
+ qdl.h     |  3 +++
+ read.c    |  2 +-
+ ufs.c     |  2 +-
+ util.c    | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 80 insertions(+), 5 deletions(-)
+
+diff --git a/patch.c b/patch.c
+index f218b77..79f52f3 100644
+--- a/patch.c
++++ b/patch.c
+@@ -24,7 +24,7 @@ int patch_load(const char *patch_file)
+ 	xmlDoc *doc;
+ 	int errors;
+ 
+-	doc = xmlReadFile(patch_file, NULL, 0);
++	doc = read_xml_file_loose(patch_file);
+ 	if (!doc) {
+ 		ux_err("failed to parse patch-type file \"%s\"\n", patch_file);
+ 		return -EINVAL;
+diff --git a/program.c b/program.c
+index e11f5ab..1da22c9 100644
+--- a/program.c
++++ b/program.c
+@@ -234,7 +234,7 @@ int program_load(const char *program_file, bool is_nand, bool allow_missing, con
+ 	xmlDoc *doc;
+ 	int errors = 0;
+ 
+-	doc = xmlReadFile(program_file, NULL, 0);
++	doc = read_xml_file_loose(program_file);
+ 	if (!doc) {
+ 		ux_err("failed to parse program-type file \"%s\"\n", program_file);
+ 		return -EINVAL;
+diff --git a/qdl.c b/qdl.c
+index fdd9527..e4fb5a0 100644
+--- a/qdl.c
++++ b/qdl.c
+@@ -64,7 +64,7 @@ static int detect_type(const char *verb)
+ 		return -EINVAL;
+ 	}
+ 
+-	doc = xmlReadFile(verb, NULL, 0);
++	doc = read_xml_file_loose(verb);
+ 	if (!doc) {
+ 		ux_err("failed to parse XML file \"%s\"\n", verb);
+ 		return -EINVAL;
+diff --git a/qdl.h b/qdl.h
+index 2fac050..6e7d98f 100644
+--- a/qdl.h
++++ b/qdl.h
+@@ -101,6 +101,9 @@ unsigned int attr_as_unsigned(xmlNode *node, const char *attr, int *errors);
+ const char *attr_as_string(xmlNode *node, const char *attr, int *errors);
+ bool attr_as_bool(xmlNode *node, const char *attr, int *errors);
+ 
++/* Tolerant XML reader that strips comments before parsing. */
++xmlDoc *read_xml_file_loose(const char *path);
++
+ void ux_init(void);
+ void ux_err(const char *fmt, ...);
+ void ux_info(const char *fmt, ...);
+diff --git a/read.c b/read.c
+index 697102e..af18ea8 100644
+--- a/read.c
++++ b/read.c
+@@ -28,7 +28,7 @@ int read_op_load(const char *read_op_file, const char *incdir)
+ 	int errors;
+ 	char tmp[PATH_MAX];
+ 
+-	doc = xmlReadFile(read_op_file, NULL, 0);
++	doc = read_xml_file_loose(read_op_file);
+ 	if (!doc) {
+ 		ux_err("failed to parse read-type file \"%s\"\n", read_op_file);
+ 		return -EINVAL;
+diff --git a/ufs.c b/ufs.c
+index bb06323..ac4d807 100644
+--- a/ufs.c
++++ b/ufs.c
+@@ -132,7 +132,7 @@ int ufs_load(const char *ufs_file, bool finalize_provisioning)
+ 		return -EEXIST;
+ 	}
+ 
+-	doc = xmlReadFile(ufs_file, NULL, 0);
++	doc = read_xml_file_loose(ufs_file);
+ 	if (!doc) {
+ 		ux_err("failed to parse ufs-type file \"%s\"\n", ufs_file);
+ 		return -EINVAL;
+diff --git a/util.c b/util.c
+index 1a8fbe1..d282ada 100644
+--- a/util.c
++++ b/util.c
+@@ -24,6 +24,78 @@ const char* qdl_version(void) {
+ #include "qdl.h"
+ #include "version.h"
+ 
++/*
++ * xmlReadFile is strict about comments containing "--". Some XML files used
++ * with qdl contain decorative comment blocks with multiple hyphens which
++ * cause libxml2 to fail parsing. Provide a tolerant loader that reads the
++ * file into memory, strips XML comments entirely, and then calls
++ * xmlReadMemory so these files can be parsed.
++ */
++xmlDoc *read_xml_file_loose(const char *path)
++{
++    int fd = -1;
++    off_t len;
++    char *buf = NULL;
++    ssize_t n;
++    xmlDoc *doc = NULL;
++
++    fd = open(path, O_RDONLY | O_BINARY);
++    if (fd < 0)
++        return NULL;
++
++    len = lseek(fd, 0, SEEK_END);
++    if (len < 0)
++        goto out;
++    lseek(fd, 0, SEEK_SET);
++
++    buf = malloc(len + 1);
++    if (!buf)
++        goto out;
++
++    n = read(fd, buf, len);
++    if (n != len)
++        goto out;
++    buf[len] = '\0';
++
++    /* Remove all XML comments: <!-- ... --> */
++    char *readp = buf;
++    char *writep = buf;
++    while (*readp) {
++        /* detect comment start */
++        if (readp[0] == '<' && readp[1] == '!' && readp[2] == '-' && readp[3] == '-') {
++            /* find comment end "-->" */
++            char *end = strstr(readp + 4, "-->");
++            if (!end) {
++                /* unterminated comment: drop rest */
++                break;
++            }
++            /* advance read pointer past "-->" */
++            readp = end + 3;
++            continue;
++        }
++        /* copy non-comment character */
++        *writep++ = *readp++;
++    }
++    *writep = '\0';
++
++    /* Trim leading whitespace so XML declaration (if present) is at the start */
++    char *trim = buf;
++    while (*trim && isspace((unsigned char)*trim))
++        trim++;
++    if (trim != buf)
++        memmove(buf, trim, strlen(trim) + 1);
++
++    /* Parse the cleaned buffer */
++    doc = xmlReadMemory(buf, strlen(buf), path, NULL, 0);
++
++out:
++    if (buf)
++        free(buf);
++    if (fd >= 0)
++        close(fd);
++    return doc;
++}
++
+ static uint8_t to_hex(uint8_t ch)
+ {
+ 	ch &= 0xf;
+-- 
+2.50.1 (Apple Git-155)
+

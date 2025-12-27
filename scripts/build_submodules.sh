@@ -171,6 +171,31 @@ main() {
     fi
   fi
 
+  PATCH_FILE="$ROOT_DIR/patch/0002-Optimize-XML-parsing-to-avoid-incorrect-syntax-in-th.patch"
+  if [ -n "$QDL_SRC" ] && [ -f "$PATCH_FILE" ]; then
+    log "Applying patch $PATCH_FILE to qdl working copy"
+    pushd "$THIRD_BUILD/qdl" >/dev/null
+    # Try git apply first (handles a/ b/ prefixes); fall back to patch -p1
+    if command -v git >/dev/null 2>&1; then
+      if git apply --check "$PATCH_FILE" >/dev/null 2>&1; then
+        git apply "$PATCH_FILE" || log "git apply failed (non-fatal)"
+      else
+        # try without check (some patches may still apply)
+        git apply "$PATCH_FILE" || {
+          log "git apply failed, trying patch -p1"
+          patch -p1 < "$PATCH_FILE" || log "patch failed (non-fatal)"
+        }
+      fi
+    else
+      patch -p1 < "$PATCH_FILE" || log "patch failed (non-fatal)"
+    fi
+    popd >/dev/null
+  else
+    if [ -n "$QDL_SRC" ]; then
+      log "No qdl patch found at $PATCH_FILE; building vanilla qdl"
+    fi
+  fi
+
   # Build qdl in the working copy and install lib into PREFIX
   if [ -n "$QDL_SRC" ]; then
     log "Building qdl against third-party libs"
