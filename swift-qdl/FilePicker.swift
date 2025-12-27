@@ -84,12 +84,28 @@ func openFiles(allowed: [String], filterPattern: String = "*", startDir: String?
 
     var created: [URL] = []
     for (idx, src) in matches.enumerated() {
-        let destName = "\(String(format: "%03d", idx))_\(src.lastPathComponent)"
+        /*
+         Use this syntax to avoid file name conflicts.
+         let destName = "\(String(format: "%03d", idx))_\(src.lastPathComponent)"
+         */
+        let destName = "\(src.lastPathComponent)"
         let dest = tmpDir.appendingPathComponent(destName)
-        do {
-            try fm.createSymbolicLink(at: dest, withDestinationURL: src)
-            created.append(dest)
-        } catch {
+        // Create a macOS bookmark (alias) file pointing to the original file.
+        // This allows the open panel to resolve back to the original path and supports multi-selection.
+        if FileManager.default.createFile(atPath: dest.path, contents: nil, attributes: nil) {
+            do {
+                let bookmark = try src.bookmarkData(options: [.suitableForBookmarkFile], includingResourceValuesForKeys: nil, relativeTo: nil)
+                try URL.writeBookmarkData(bookmark, to: dest)
+                created.append(dest)
+            } catch {
+                // fallback: try copying the file if bookmark creation fails
+                do {
+                    try fm.removeItem(at: dest)
+                } catch { }
+                do { try fm.copyItem(at: src, to: dest); created.append(dest) } catch { }
+            }
+        } else {
+            // couldn't create placeholder file, fallback to copy
             do { try fm.copyItem(at: src, to: dest); created.append(dest) } catch { }
         }
     }
@@ -106,8 +122,39 @@ func openFiles(allowed: [String], filterPattern: String = "*", startDir: String?
     var results: [String] = []
     if resp == .OK {
         for url in panel.urls {
-            let resolved = (try? URL(resolvingAliasFileAt: url)) ?? url.resolvingSymlinksInPath()
-            results.append(resolved.path)
+            var resolvedURL: URL? = nil
+            // 1. try resolving Finder alias file (older API)
+            if let aliasResolved = try? URL(resolvingAliasFileAt: url) {
+                resolvedURL = aliasResolved
+            }
+
+            // 2. try resolving bookmark data if present
+            if resolvedURL == nil {
+                // attempt to read bookmark file and resolve it
+                if let bookmark = try? URL.bookmarkData(withContentsOf: url) {
+                    var isStale: Bool = false
+                    if let bmResolved = try? URL(resolvingBookmarkData: bookmark, options: [.withoutUI, .withoutMounting], relativeTo: nil, bookmarkDataIsStale: &isStale) {
+                        resolvedURL = bmResolved
+                    }
+                } else {
+                    // attempt to read raw bookmark data directly from file as fallback
+                    if let bmData = try? Data(contentsOf: url) {
+                        var isStale2: Bool = false
+                        if let bmResolved2 = try? URL(resolvingBookmarkData: bmData, options: [.withoutUI, .withoutMounting], relativeTo: nil, bookmarkDataIsStale: &isStale2) {
+                            resolvedURL = bmResolved2
+                        }
+                    }
+                }
+            }
+
+            // 3. last resort: resolve symlinks in path
+            if resolvedURL == nil {
+                resolvedURL = url.resolvingSymlinksInPath()
+            }
+
+            if let r = resolvedURL {
+                results.append(r.path)
+            }
         }
     }
 
@@ -138,139 +185,6 @@ func selectFirmwareDirectory(viewModel: DeviceViewModel) {
     if Thread.isMainThread { resp = panel.runModal() } else { DispatchQueue.main.sync { resp = panel.runModal() } }
     if resp == .OK, let url = panel.url {
         DispatchQueue.main.async { viewModel.firmwareDirectory = url.path }
-    }
-    #endif
-}
-
-// Orchestrate firmware selection (full flow) - kept for convenience if needed elsewhere
-func runFirmwareSelection(viewModel: DeviceViewModel) {
-    #if os(macOS)
-    let fm = FileManager.default
-
-    // 1) choose firmware directory
-    let dirPanel = NSOpenPanel()
-    dirPanel.canChooseDirectories = true
-    dirPanel.canChooseFiles = false
-    dirPanel.allowsMultipleSelection = false
-    dirPanel.title = NSLocalizedString("firmware_dir_panel_title", comment: "firmware directory panel title")
-    dirPanel.prompt = NSLocalizedString("firmware_dir_panel_prompt", comment: "firmware directory panel prompt")
-    dirPanel.message = NSLocalizedString("firmware_dir_panel_message", comment: "firmware directory panel message")
-    if let last = viewModel.firmwareDirectory, FileManager.default.fileExists(atPath: last) {
-        dirPanel.directoryURL = URL(fileURLWithPath: last)
-    } else {
-        dirPanel.directoryURL = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSHomeDirectory())
-    }
-
-    var dirResp: NSApplication.ModalResponse = .cancel
-    if Thread.isMainThread { dirResp = dirPanel.runModal() } else { DispatchQueue.main.sync { dirResp = dirPanel.runModal() } }
-    guard dirResp == .OK, let dirURL = dirPanel.url else { return }
-
-    // remember chosen directory for reuse
-    viewModel.firmwareDirectory = dirURL.path
-
-    // 2) enumerate matches and create tmp dir with subfolders
-    var elfMatches: [URL] = []
-    var xmlMatches: [URL] = []
-    if let enumerator = fm.enumerator(at: dirURL, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants], errorHandler: nil) {
-        for case let fileURL as URL in enumerator {
-            let ext = fileURL.pathExtension.lowercased()
-            if ext == "elf" { elfMatches.append(fileURL) }
-            else if ext == "xml" { xmlMatches.append(fileURL) }
-        }
-    }
-    if elfMatches.isEmpty && xmlMatches.isEmpty { return }
-
-    let tmpDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("qdl_tmp_\(UUID().uuidString)")
-    do { try fm.createDirectory(at: tmpDir, withIntermediateDirectories: true) } catch { return }
-
-    var mapping: [URL: URL] = [:]
-    func makeLinks(_ sources: [URL], into subfolder: String) {
-        let folder = tmpDir.appendingPathComponent(subfolder)
-        try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
-        for (idx, src) in sources.enumerated() {
-            let dest = folder.appendingPathComponent("\(String(format: "%03d", idx))_\(src.lastPathComponent)")
-            do { try fm.createSymbolicLink(at: dest, withDestinationURL: src); mapping[dest] = src } catch { do { try fm.copyItem(at: src, to: dest); mapping[dest] = src } catch { } }
-        }
-    }
-
-    makeLinks(elfMatches, into: "elfs")
-    makeLinks(xmlMatches, into: "xmls")
-
-    // 3) ask user to choose programmer (.elf) if any
-    if !elfMatches.isEmpty {
-        let panel = NSOpenPanel()
-        panel.allowedFileTypes = ["elf"]
-        panel.allowsMultipleSelection = false
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.directoryURL = tmpDir.appendingPathComponent("elfs")
-
-        var resp: NSApplication.ModalResponse = .cancel
-        if Thread.isMainThread { resp = panel.runModal() } else { DispatchQueue.main.sync { resp = panel.runModal() } }
-        if resp == .OK, let sel = panel.url { viewModel.programmerPath = sel.path }
-    }
-
-    // 4) xml selection depending on mode
-    if viewModel.mode == .download {
-        let rawPanel = NSOpenPanel()
-        rawPanel.allowedFileTypes = ["xml"]
-        rawPanel.allowsMultipleSelection = true
-        rawPanel.canChooseFiles = true
-        rawPanel.canChooseDirectories = false
-        rawPanel.directoryURL = tmpDir.appendingPathComponent("xmls")
-
-        var rawResp: NSApplication.ModalResponse = .cancel
-        if Thread.isMainThread { rawResp = rawPanel.runModal() } else { DispatchQueue.main.sync { rawResp = rawPanel.runModal() } }
-        if rawResp == .OK {
-            var rawpaths: [String] = []
-            var patchpaths: [String] = []
-            var origDirForFirstRaw: URL? = nil
-            for u in rawPanel.urls {
-                let selPath = u.path
-                let orig = mapping[u]
-                let origName = orig?.lastPathComponent ?? u.resolvingSymlinksInPath().lastPathComponent
-                let name = origName.lowercased()
-                if name.hasPrefix("rawprogram") {
-                    rawpaths.append(selPath)
-                    if origDirForFirstRaw == nil { origDirForFirstRaw = orig?.deletingLastPathComponent() ?? URL(fileURLWithPath: selPath).resolvingSymlinksInPath().deletingLastPathComponent() }
-                } else if name.hasPrefix("patch") { patchpaths.append(selPath) }
-            }
-
-            if patchpaths.isEmpty, let origDir = origDirForFirstRaw {
-                if let xmls = try? fm.contentsOfDirectory(at: origDir, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
-                    for f in xmls where f.pathExtension.lowercased() == "xml" {
-                        let name = f.lastPathComponent.lowercased()
-                        if name.hasPrefix("patch") {
-                            let dest = tmpDir.appendingPathComponent("auto_patch_\(f.lastPathComponent)")
-                            if !fm.fileExists(atPath: dest.path) { try? fm.createSymbolicLink(at: dest, withDestinationURL: f); mapping[dest] = f; patchpaths.append(dest.path) }
-                        }
-                    }
-                }
-            }
-
-            viewModel.rawprogramPaths = rawpaths
-            viewModel.patchPaths = patchpaths
-        }
-    } else {
-        let provPanel = NSOpenPanel()
-        provPanel.allowedFileTypes = ["xml"]
-        provPanel.allowsMultipleSelection = true
-        provPanel.canChooseFiles = true
-        provPanel.canChooseDirectories = false
-        provPanel.directoryURL = tmpDir.appendingPathComponent("xmls")
-
-        var provResp: NSApplication.ModalResponse = .cancel
-        if Thread.isMainThread { provResp = provPanel.runModal() } else { DispatchQueue.main.sync { provResp = provPanel.runModal() } }
-        if provResp == .OK { viewModel.provisionPaths = provPanel.urls.map { $0.path } }
-    }
-
-    try? fm.removeItem(at: tmpDir)
-
-    DispatchQueue.main.async {
-        print("Selected programmer: \(viewModel.programmerPath ?? "(nil)")")
-        print("Selected rawprograms: \(viewModel.rawprogramPaths)")
-        print("Selected patches: \(viewModel.patchPaths)")
-        print("Selected provisions: \(viewModel.provisionPaths)")
     }
     #endif
 }
