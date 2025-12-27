@@ -10,9 +10,9 @@ import AppKit
 #endif
 
 // open a single file using the filtered tmp-dir approach
-func openSingleFiltered(allowed: [String], filterPattern: String = "*", startDir: String? = nil) -> String? {
+func openSingleFiltered(allowed: [String], filterPattern: String = "*", startDir: String? = nil, updateStartDir: ((String) -> Void)? = nil) -> String? {
     #if os(macOS)
-    let results = openFiles(allowed: allowed, filterPattern: filterPattern, startDir: startDir)
+    let results = openFiles(allowed: allowed, filterPattern: filterPattern, startDir: startDir, updateStartDir: updateStartDir)
     return results.first
     #else
     return nil
@@ -21,7 +21,7 @@ func openSingleFiltered(allowed: [String], filterPattern: String = "*", startDir
 
 // openFiles: enumerate files under a firmware directory matching a glob-style pattern,
 // create a temporary directory with symlinks to matched files and present an NSOpenPanel
-func openFiles(allowed: [String], filterPattern: String = "*", startDir: String? = nil) -> [String] {
+func openFiles(allowed: [String], filterPattern: String = "*", startDir: String? = nil, updateStartDir: ((String) -> Void)? = nil) -> [String] {
     #if os(macOS)
     let fm = FileManager.default
 
@@ -47,6 +47,10 @@ func openFiles(allowed: [String], filterPattern: String = "*", startDir: String?
         }
         guard dirResp == .OK, let picked = dirPanel.url else { return [] }
         chosenDir = picked
+
+        // If caller provided a callback, write back the selected firmware directory so
+        // the caller (e.g. view model) can persist it for subsequent operations.
+        updateStartDir?(picked.path)
     }
 
     guard let dirURL = chosenDir else { return [] }

@@ -29,7 +29,7 @@ struct DownloadModeView: View {
 
                     HStack {
                         Button("select_programmer") {
-                            if let path = openSingleFiltered(allowed: ["elf"], filterPattern: "*firehose*.elf", startDir: viewModel.firmwareDirectory) {
+                            if let path = openSingleFiltered(allowed: ["elf"], filterPattern: "*firehose*.elf", startDir: viewModel.firmwareDirectory, updateStartDir: { viewModel.firmwareDirectory = $0 }) {
                                 viewModel.programmerPath = path
                             }
                         }
@@ -40,7 +40,7 @@ struct DownloadModeView: View {
                     if viewModel.mode == .download {
                         HStack {
                             Button("select_rawprogram") {
-                                let paths = openFiles(allowed: ["xml"], filterPattern: "*rawprogram*", startDir: viewModel.firmwareDirectory)
+                                let paths = openFiles(allowed: ["xml"], filterPattern: "*rawprogram*", startDir: viewModel.firmwareDirectory, updateStartDir: { viewModel.firmwareDirectory = $0 })
                                 viewModel.rawprogramPaths = paths
                             }
                             Spacer()
@@ -49,7 +49,7 @@ struct DownloadModeView: View {
 
                         HStack {
                             Button("select_patch") {
-                                let paths = openFiles(allowed: ["xml"], filterPattern: "patch*", startDir: viewModel.firmwareDirectory)
+                                let paths = openFiles(allowed: ["xml"], filterPattern: "patch*", startDir: viewModel.firmwareDirectory, updateStartDir: { viewModel.firmwareDirectory = $0 })
                                 viewModel.patchPaths = paths
                             }
                             Spacer()
@@ -58,7 +58,7 @@ struct DownloadModeView: View {
                     } else {
                         HStack {
                             Button("select_provision") {
-                                let paths = openFiles(allowed: ["xml"], filterPattern: "provision*", startDir: viewModel.firmwareDirectory)
+                                let paths = openFiles(allowed: ["xml"], filterPattern: "provision*", startDir: viewModel.firmwareDirectory, updateStartDir: { viewModel.firmwareDirectory = $0 })
                                 viewModel.provisionPaths = paths
                             }
                             Spacer()
