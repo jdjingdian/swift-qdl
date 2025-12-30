@@ -66,6 +66,8 @@ final class DeviceViewModel: ObservableObject {
     // runtime state
     @Published var isRunning: Bool = false
     @Published var runResult: Int? = nil
+    // whether to allow missing files during run; default checked
+    @Published var allowMissing: Bool = true
 
     var canStart: Bool {
         switch mode {
@@ -208,7 +210,7 @@ final class DeviceViewModel: ObservableObject {
                                    cProg,
                                    buf.baseAddress,
                                    count,
-                                   false,
+                                   self.allowMissing,
                                    includeDirC,
                                    0)
                 }
@@ -235,7 +237,7 @@ final class DeviceViewModel: ObservableObject {
                                    cProg,
                                    buf.baseAddress,
                                    count,
-                                   false,
+                                   self.allowMissing,
                                    includeDirC,
                                    0)
                 }

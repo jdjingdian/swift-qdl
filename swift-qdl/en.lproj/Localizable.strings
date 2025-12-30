@@ -28,3 +28,6 @@
 "firmware_root_panel_prompt" = "Choose Directory";
 "mode_label" = "Mode";
 "storage_type_label" = "Storage Type";
+
+// Download Page
+"download_allow_missing_label" = "Allow Missing";

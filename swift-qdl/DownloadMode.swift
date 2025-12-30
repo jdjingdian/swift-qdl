@@ -67,6 +67,15 @@ struct DownloadModeView: View {
                     }
                 }
 
+                // Allow missing files toggle
+                HStack {
+                    Toggle(isOn: $viewModel.allowMissing) {
+                        Text("download_allow_missing_label")
+                    }
+                    .toggleStyle(CheckboxToggleStyle())
+                    Spacer()
+                }
+
                 HStack {
                     Button(action: { viewModel.start() }) { Label("start_button", systemImage: "play.fill") }
                         .keyboardShortcut(.defaultAction)
