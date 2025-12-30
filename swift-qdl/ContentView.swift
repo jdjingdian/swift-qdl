@@ -57,10 +57,15 @@ struct ContentView: View {
                 }
 
                 Spacer()
-                Text(String(format: "%@ %@", NSLocalizedString("qdl_version", comment: "QDL version label"), version))
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .padding()
+                VStack(alignment: .leading) {
+                    Text(String(format: NSLocalizedString("app_version", comment: "App version and build (placeholder: version, build)"), Bundle.main.appVersion, Bundle.main.appBuild))
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                    Text(String(format: "%@ %@", NSLocalizedString("qdl_version", comment: "QDL version label"), version))
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }.padding()
+
             }
         } detail: {
             // Detail: selected device and controls

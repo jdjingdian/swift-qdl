@@ -29,5 +29,8 @@
 "mode_label" = "Mode";
 "storage_type_label" = "Storage Type";
 
+// app related
+"app_version" = "GUI Version: v%@ (Build %@)";
+
 // Download Page
 "download_allow_missing_label" = "Allow Missing";

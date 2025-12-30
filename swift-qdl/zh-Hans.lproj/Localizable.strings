@@ -29,5 +29,8 @@
 "mode_label" = "模式";
 "storage_type_label" = "存储类型";
 
+// app related
+"app_version" = "GUI 版本: v%@ (构建 %@)";
+
 // Download Page
 "download_allow_missing_label" = "允许 XML 不完整";
